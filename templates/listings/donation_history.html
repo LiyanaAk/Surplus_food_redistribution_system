@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Donation History & Impact</h2>
+      <p class="text-muted small mb-0">Transparent historical ledger of all surplus food contributions posted from your account.</p>
+    </div>
+    <div class="d-flex gap-3">
+      <div class="metric-card py-2 px-3 text-center">
+        <div class="fw-bold fs-5 text-success">{{ total_donations }}</div>
+        <div class="small text-muted">Total Donated</div>
+      </div>
+      <div class="metric-card py-2 px-3 text-center">
+        <div class="fw-bold fs-5 text-primary">{{ completed_deliveries }}</div>
+        <div class="small text-muted">Completed Deliveries</div>
+      </div>
+      <div class="metric-card py-2 px-3 text-center">
+        <div class="fw-bold fs-5 text-teal" style="color: #0d9488;">{{ total_meals }}</div>
+        <div class="small text-muted">Meals Served</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 p-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Food Item</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Recipient / Destination</th>
+            <th>Volunteer / NGO</th>
+            <th>Meals Served</th>
+            <th>Final Status</th>
+            <th class="text-end">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if listings %}
+            {% for item in listings %}
+              {% with claim=item.claims.all|first %}
+              <tr>
+                <td class="fw-semibold">#{{ item.listing_id }}</td>
+                <td>
+                  <strong>{{ item.food_type }}</strong>
+                  <div class="text-muted small">{{ item.created_at|date:"M d, Y" }}</div>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ item.category.name }}</span></td>
+                <td>{{ item.quantity }} {{ item.quantity_unit }}</td>
+                <td>
+                  {% if claim and claim.institution %}
+                    <span class="text-primary fw-semibold"><i class="bi bi-building me-1"></i> {{ claim.institution.user.name }}</span>
+                  {% elif claim and claim.recipient_note %}
+                    <span class="text-dark small"><i class="bi bi-people me-1"></i> {{ claim.recipient_note|truncatechars:30 }}</span>
+                  {% else %}
+                    <span class="text-muted small">&mdash;</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if claim %}
+                    <span class="small fw-semibold">{{ claim.claimer.name }}</span>
+                  {% else %}
+                    <span class="text-muted small">&mdash;</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if claim and claim.meals_delivered %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">{{ claim.meals_delivered }} meals</span>
+                  {% else %}
+                    <span class="text-muted small">&mdash;</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-{{ item.status|lower }}">{{ item.get_status_display }}</span>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'listings:listing_detail' item.listing_id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endwith %}
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                No past donations recorded yet.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

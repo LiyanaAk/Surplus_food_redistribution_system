@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Contact Us</li>
+        </ol>
+      </nav>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <div class="text-center mb-4">
+          <h2 class="fw-bold mb-1">Get in Touch</h2>
+          <p class="text-muted small">Have questions about donating food or joining as a volunteer? Send us a message.</p>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-4 text-center">
+            <div class="p-3 bg-light rounded-3 h-100">
+              <i class="bi bi-geo-alt text-success fs-3 mb-2"></i>
+              <h6 class="fw-bold mb-1">Office</h6>
+              <p class="small text-muted mb-0">Civil Lines, Aligarh, UP</p>
+            </div>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="p-3 bg-light rounded-3 h-100">
+              <i class="bi bi-telephone text-success fs-3 mb-2"></i>
+              <h6 class="fw-bold mb-1">Helpline</h6>
+              <p class="small text-muted mb-0">+91 98765 43210</p>
+            </div>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="p-3 bg-light rounded-3 h-100">
+              <i class="bi bi-envelope text-success fs-3 mb-2"></i>
+              <h6 class="fw-bold mb-1">Email</h6>
+              <p class="small text-muted mb-0">contact@foodshare.org</p>
+            </div>
+          </div>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Your Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Your Email</label>
+              {{ form.email }}
+              {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-secondary">Subject</label>
+              {{ form.subject }}
+              {% if form.subject.errors %}<div class="text-danger small">{{ form.subject.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-secondary">Message</label>
+              {{ form.message }}
+              {% if form.message.errors %}<div class="text-danger small">{{ form.message.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-12 mt-4 text-center">
+              <button type="submit" class="btn btn-primary-green btn-lg px-5 fw-bold">
+                Send Message
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

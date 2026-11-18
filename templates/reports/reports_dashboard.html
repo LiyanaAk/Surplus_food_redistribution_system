@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Reports & Redistribution Analytics</h2>
+      <p class="text-muted small mb-0">Analyze food redistribution performance and export audit ledgers.</p>
+    </div>
+    <div>
+      <a href="{% url 'reports:export_report_csv' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-success fw-bold shadow-sm">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Report to CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Date Range Filter Card -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-secondary">Start Date</label>
+        <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-secondary">End Date</label>
+        <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-green flex-grow-1 fw-bold">
+          <i class="bi bi-filter me-1"></i> Generate Report
+        </button>
+        <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-secondary" title="Reset Period">
+          <i class="bi bi-arrow-clockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Metric Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center">
+        <div class="metric-value text-dark mb-1">{{ total_listed }}</div>
+        <div class="metric-label">Food Batches Listed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-primary">
+        <div class="metric-value text-primary mb-1">{{ total_claimed }}</div>
+        <div class="metric-label">Batches Claimed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-info">
+        <div class="metric-value text-info mb-1">{{ total_collected }}</div>
+        <div class="metric-label">Batches Collected</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center" style="border-color: #0d9488;">
+        <div class="metric-value mb-1" style="color: #0d9488;">{{ total_delivered }}</div>
+        <div class="metric-label">Batches Delivered</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-danger">
+        <div class="metric-value text-danger mb-1">{{ total_expired }}</div>
+        <div class="metric-label">Batches Expired</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-success">
+        <div class="metric-value text-success mb-1">{{ total_meals_delivered }}</div>
+        <div class="metric-label">Total Meals Served</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Breakdown & Visual Analytics -->
+  <div class="row g-4 mb-4">
+    <!-- Category Breakdown Table -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-tags-fill text-success me-2"></i> Food Category Redistribution Breakdown</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Category</th>
+                <th class="text-center">Total Listed</th>
+                <th class="text-center">Successfully Delivered</th>
+                <th class="text-end">Success Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if category_data %}
+                {% for cd in category_data %}
+                  <tr>
+                    <td><strong>{{ cd.name }}</strong></td>
+                    <td class="text-center">{{ cd.cat_count }}</td>
+                    <td class="text-center"><span class="badge bg-success-subtle text-success border">{{ cd.delivered_count }}</span></td>
+                    <td class="text-end fw-semibold">
+                      {% if cd.cat_count > 0 %}
+                        {% widthratio cd.delivered_count cd.cat_count 100 %}%
+                      {% else %}
+                        0%
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">No category data in this time range.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Period Report Visual Chart -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-fill text-primary me-2"></i> Redistribution Funnel Analysis</h5>
+        <div style="height: 280px;" class="position-relative">
+          <canvas id="funnelChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboards -->
+  <div class="row g-4">
+    <!-- Top Donors -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-trophy text-warning me-2"></i> Top Contributing Food Donors</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Donor Organization</th>
+                <th class="text-center">Total Batches</th>
+                <th class="text-center">Delivered</th>
+                <th class="text-end">Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if top_donors %}
+                {% for d in top_donors %}
+                  <tr>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td class="text-center">{{ d.donation_count }}</td>
+                    <td class="text-center"><span class="badge bg-success">{{ d.delivered_count }}</span></td>
+                    <td class="text-end small text-muted">{{ d.phone|default:d.email }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="4" class="text-center py-4 text-muted">No donor records for this period.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Volunteers -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-award text-info me-2"></i> Top Volunteer Rescue Squads</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Volunteer Squad / NGO</th>
+                <th class="text-center">Claims Taken</th>
+                <th class="text-center">Completed</th>
+                <th class="text-end">Meals Nourished</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if top_volunteers %}
+                {% for v in top_volunteers %}
+                  <tr>
+                    <td><strong>{{ v.name }}</strong></td>
+                    <td class="text-center">{{ v.claims_count }}</td>
+                    <td class="text-center"><span class="badge bg-teal" style="background-color: #0d9488; color: white;">{{ v.delivered_count }}</span></td>
+                    <td class="text-end fw-bold text-success">{{ v.total_meals|default:"0" }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="4" class="text-center py-4 text-muted">No volunteer records for this period.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('funnelChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Listed', 'Claimed', 'Collected', 'Delivered', 'Expired'],
+      datasets: [{
+        label: 'Batches',
+        data: [{{ total_listed }}, {{ total_claimed }}, {{ total_collected }}, {{ total_delivered }}, {{ total_expired }}],
+        backgroundColor: [
+          '#64748b',
+          '#3b82f6',
+          '#8b5cf6',
+          '#10b981',
+          '#ef4444'
+        ],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

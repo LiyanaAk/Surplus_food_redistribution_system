@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">About Us</li>
+        </ol>
+      </nav>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5">
+        <span class="badge bg-success-subtle text-success border border-success-subtle align-self-start px-3 py-2 rounded-pill fw-semibold mb-3">
+          Our Mission
+        </span>
+        <h1 class="fw-bold mb-3">Share Food. Reduce Waste. Feed Communities.</h1>
+
+        <p class="lead text-secondary mb-4">
+          Every day, good food goes to waste while people nearby go hungry. FoodShare connects those who have surplus food with volunteers and shelters who can put it to good use right away.
+        </p>
+
+        <hr class="my-4">
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 h-100 text-center">
+              <i class="bi bi-heart text-danger fs-2 mb-2"></i>
+              <h5 class="fw-bold">Fight Hunger</h5>
+              <p class="small text-muted mb-0">
+                Direct fresh meals to orphanages, elderly care homes, and homeless individuals in our neighborhoods.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 h-100 text-center">
+              <i class="bi bi-trash text-warning fs-2 mb-2"></i>
+              <h5 class="fw-bold">Stop Food Waste</h5>
+              <p class="small text-muted mb-0">
+                Rescue edible food from restaurants, banquet halls, and kitchens before it ever reaches a landfill.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 bg-light rounded-3 h-100 text-center">
+              <i class="bi bi-people text-success fs-2 mb-2"></i>
+              <h5 class="fw-bold">Unite Communities</h5>
+              <p class="small text-muted mb-0">
+                Empower local volunteers and donors to work hand-in-hand with verified care institutions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h4 class="fw-bold mb-3">Why Real-Time Coordination Matters</h4>
+        <p class="text-secondary mb-4">
+          Cooked food has a short shelf life. When events end or kitchens close, meals must be collected within hours. Our platform highlights urgent donations and shows volunteers exactly where food is waiting, making pickups fast, safe, and reliable.
+        </p>
+
+        <div class="p-4 bg-light rounded-4 text-center">
+          <h5 class="fw-bold mb-2">Want to help make a difference?</h5>
+          <p class="small text-muted mb-3">Whether you have extra meals to share or time to pick up food, your involvement matters.</p>
+          <div class="d-flex gap-2 justify-content-center">
+            <a href="{% url 'accounts:register_donor' %}" class="btn btn-success btn-sm px-4 fw-bold">Donate Food</a>
+            <a href="{% url 'accounts:register_ngo' %}" class="btn btn-outline-dark btn-sm px-4 fw-semibold">Volunteer Today</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Surplus Food Discovery</h2>
+      <p class="text-muted small mb-0">Search, filter by urgency & proximity, and claim fresh edible surplus food for distribution.</p>
+    </div>
+    {% if not user.is_approved %}
+      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
+        <i class="bi bi-hourglass-split me-1"></i> Account verification pending (View-only mode)
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-secondary">Search by Food Name</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" class="form-control" placeholder="e.g. Rice, Biryani, Bread..." value="{{ search_query }}">
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-secondary">Food Category</label>
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.category_id }}" {% if category_id == cat.category_id|stringformat:"s" %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-secondary">Priority Urgency</label>
+        <select name="priority" class="form-select">
+          <option value="">All Priorities</option>
+          <option value="URGENT" {% if priority_filter == 'URGENT' %}selected{% endif %}>Urgent (&le; 1 hr)</option>
+          <option value="HIGH" {% if priority_filter == 'HIGH' %}selected{% endif %}>High (&le; 3 hrs)</option>
+          <option value="NORMAL" {% if priority_filter == 'NORMAL' %}selected{% endif %}>Normal</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-secondary">Search Radius (km)</label>
+        <div class="input-group">
+          <input type="number" name="radius" class="form-control" min="1" max="100" value="{{ radius_km }}">
+          <span class="input-group-text">km</span>
+        </div>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        {% if volunteer_has_coords %}
+          <div class="form-check align-self-center me-2">
+            <input class="form-check-input" type="checkbox" name="use_location" value="1" id="id_use_location" {% if use_location == '1' %}checked{% endif %}>
+            <label class="form-check-label small fw-semibold text-secondary" for="id_use_location">
+              Near Me
+            </label>
+          </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary-green flex-grow-1 fw-bold">
+          <i class="bi bi-funnel me-1"></i> Filter
+        </button>
+        <a href="{% url 'claims:available_listings' %}" class="btn btn-outline-secondary" title="Reset Filters">
+          <i class="bi bi-arrow-clockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Interactive Map of Available Food Listings -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0"><i class="bi bi-map text-success me-2"></i> Real-Time Food Availability Map</h5>
+      <span class="badge bg-light text-dark border">{{ listings|length }} active locations</span>
+    </div>
+    <div id="discovery-map" class="leaflet-map" style="height: 400px;"></div>
+  </div>
+
+  <!-- Listings Grid -->
+  <div class="row g-4">
+    {% if listings %}
+      {% for item in listings %}
+        <div class="col-md-6 col-lg-4">
+          <div class="food-card shadow-sm">
+            <div class="food-card-header bg-light">
+              <span class="badge bg-secondary-subtle text-secondary border">{{ item.category.name }}</span>
+              {% if item.priority == 'URGENT' %}
+                <span class="badge badge-urgent"><i class="bi bi-fire"></i> URGENT</span>
+              {% elif item.priority == 'HIGH' %}
+                <span class="badge badge-high"><i class="bi bi-hourglass-split"></i> HIGH</span>
+              {% else %}
+                <span class="badge badge-normal">NORMAL</span>
+              {% endif %}
+            </div>
+
+            <div class="food-card-body">
+              <h5 class="fw-bold text-dark mb-1 text-truncate" title="{{ item.food_type }}">
+                <a href="{% url 'listings:listing_detail' item.listing_id %}" class="text-dark text-decoration-none">
+                  {{ item.food_type }}
+                </a>
+              </h5>
+
+              <div class="text-muted small mb-2">
+                <i class="bi bi-shop me-1 text-success"></i> {{ item.donor.name }}
+              </div>
+              <div class="text-muted small mb-2 text-truncate d-flex justify-content-between align-items-center">
+                <span class="text-truncate"><i class="bi bi-geo-alt me-1 text-danger"></i> {{ item.pickup_address }}</span>
+                {% if item.latitude and item.longitude %}
+                  <a href="https://www.google.com/maps/dir/?api=1&destination={{ item.latitude }},{{ item.longitude }}" target="_blank" rel="noopener" class="text-primary small text-decoration-none ms-1 flex-shrink-0" title="Get Directions in Google Maps">
+                    <i class="bi bi-compass"></i> Directions
+                  </a>
+                {% endif %}
+              </div>
+
+              {% if item.distance_from_volunteer is not None %}
+                <div class="badge bg-info-subtle text-dark border border-info-subtle small mb-2">
+                  <i class="bi bi-pin-map-fill text-primary me-1"></i> {{ item.distance_from_volunteer }} km away from your base
+                </div>
+              {% endif %}
+
+              <div class="p-2 bg-light rounded mt-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-success fs-6">{{ item.quantity }} {{ item.quantity_unit }}</span>
+                <span class="small {% if item.remaining_minutes <= 60 %}text-danger fw-bold{% elif item.remaining_minutes <= 180 %}text-warning-emphasis fw-bold{% else %}text-muted{% endif %}">
+                  <i class="bi bi-stopwatch me-1"></i> {{ item.remaining_time_display }}
+                </span>
+              </div>
+            </div>
+
+            <div class="food-card-footer d-flex gap-2">
+              <a href="{% url 'listings:listing_detail' item.listing_id %}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                Details
+              </a>
+              {% if user.is_approved %}
+                <a href="{% url 'claims:claim_listing' item.listing_id %}" class="btn btn-warning btn-sm flex-grow-1 fw-bold">
+                  <i class="bi bi-bag-check me-1"></i> Claim Food
+                </a>
+              {% else %}
+                <button class="btn btn-secondary btn-sm flex-grow-1" disabled title="Pending verification">
+                  Approval Pending
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card p-5 text-center text-muted bg-white border-0 shadow-sm rounded-4">
+          <i class="bi bi-search fs-1 text-muted mb-3"></i>
+          <h4>No matching surplus food listings found</h4>
+          <p class="mb-3">Try adjusting your category, urgency filters, or expanding your search radius.</p>
+          <div>
+            <a href="{% url 'claims:available_listings' %}" class="btn btn-success fw-bold">Clear Filters</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const map = L.map('discovery-map').setView([27.8974, 78.0880], 13);
+  window.createAppTileLayer().addTo(map);
+  setTimeout(function() { map.invalidateSize(); }, 250);
+
+  const bounds = [];
+
+  {% for item in listings %}
+    {% if item.latitude and item.longitude %}
+      var lat = {{ item.latitude }};
+      var lng = {{ item.longitude }};
+      bounds.push([lat, lng]);
+
+      var priorityColor = "{% if item.priority == 'URGENT' %}#dc3545{% elif item.priority == 'HIGH' %}#f59e0b{% else %}#10b981{% endif %}";
+
+      var marker = L.circleMarker([lat, lng], {
+        radius: 9,
+        fillColor: priorityColor,
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+      }).addTo(map);
+
+      var popupHtml = `
+        <div style="min-width: 190px;">
+          <strong style="color: #1b4332;">${"{{ item.food_type|escapejs }}"}</strong><br>
+          <small class="text-muted"><i class="bi bi-geo-alt text-danger me-1"></i>${"{{ item.pickup_address|escapejs }}"}</small><br>
+          <span class="badge" style="background-color: ${priorityColor}; color: white;">${"{{ item.priority }}"}</span> &bull; 
+          <strong>${"{{ item.quantity }}"} ${"{{ item.quantity_unit }}"}</strong><br>
+          <small class="text-danger">Expires: ${"{{ item.remaining_time_display }}"}</small><br>
+          <div class="mt-2 d-flex gap-1 justify-content-center">
+            <a href="{% url 'listings:listing_detail' item.listing_id %}" class="btn btn-sm btn-success py-0 px-2" style="font-size: 0.75rem;">View & Claim</a>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" title="Get Directions in Google Maps">
+              <i class="bi bi-compass"></i> Directions
+            </a>
+          </div>
+        </div>
+      `;
+      marker.bindPopup(popupHtml);
+    {% endif %}
+  {% endfor %}
+
+  if (bounds.length > 0) {
+    map.fitBounds(bounds, {padding: [30, 30]});
+  }
+});
+</script>
+{% endblock %}

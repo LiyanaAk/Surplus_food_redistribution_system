@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">My Food Listings</h2>
+      <p class="text-muted small mb-0">Manage all surplus food batches posted from your donor account.</p>
+    </div>
+    <a href="{% url 'listings:create_listing' %}" class="btn btn-primary-green fw-bold shadow-sm">
+      <i class="bi bi-plus-circle me-1"></i> Post New Listing
+    </a>
+  </div>
+
+  <!-- Filter Status Tabs -->
+  <ul class="nav nav-pills mb-4 gap-2">
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'all' %}active bg-success{% else %}bg-white border text-dark{% endif %}" href="{% url 'listings:my_listings' %}?status=all">
+        All Listings
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'available' %}active bg-success{% else %}bg-white border text-dark{% endif %}" href="{% url 'listings:my_listings' %}?status=available">
+        <i class="bi bi-check-circle me-1"></i> Available
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'claimed' %}active bg-primary{% else %}bg-white border text-dark{% endif %}" href="{% url 'listings:my_listings' %}?status=claimed">
+        <i class="bi bi-bag-check me-1"></i> Claimed
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'in_transit' %}active bg-info text-dark{% else %}bg-white border text-dark{% endif %}" href="{% url 'listings:my_listings' %}?status=in_transit">
+        <i class="bi bi-truck me-1"></i> In Transit
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'delivered' %}active bg-teal text-white{% else %}bg-white border text-dark{% endif %}" style="{% if current_status == 'delivered' %}background-color: #0d9488;{% endif %}" href="{% url 'listings:my_listings' %}?status=delivered">
+        <i class="bi bi-patch-check me-1"></i> Delivered
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if current_status == 'expired' %}active bg-secondary{% else %}bg-white border text-dark{% endif %}" href="{% url 'listings:my_listings' %}?status=expired">
+        <i class="bi bi-hourglass-bottom me-1"></i> Expired
+      </a>
+    </li>
+  </ul>
+
+  <!-- Listings Grid -->
+  <div class="row g-4">
+    {% if listings %}
+      {% for item in listings %}
+        <div class="col-md-6 col-lg-4">
+          <div class="food-card shadow-sm">
+            <div class="food-card-header bg-light">
+              <span class="badge bg-secondary-subtle text-secondary border">{{ item.category.name }}</span>
+              <span class="badge badge-{{ item.status|lower }}">{{ item.get_status_display }}</span>
+            </div>
+            <div class="food-card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="fw-bold mb-0 text-truncate" title="{{ item.food_type }}">
+                  <a href="{% url 'listings:listing_detail' item.listing_id %}" class="text-dark text-decoration-none">
+                    {{ item.food_type }}
+                  </a>
+                </h5>
+                {% if item.priority == 'URGENT' %}
+                  <span class="badge badge-urgent ms-2"><i class="bi bi-fire"></i> Urgent</span>
+                {% elif item.priority == 'HIGH' %}
+                  <span class="badge badge-high ms-2">High</span>
+                {% else %}
+                  <span class="badge badge-normal ms-2">Normal</span>
+                {% endif %}
+              </div>
+
+              <div class="small text-muted mb-2">
+                <i class="bi bi-boxes me-1"></i> Quantity: <strong>{{ item.quantity }}</strong> {{ item.quantity_unit }}
+              </div>
+              <div class="small text-muted mb-2">
+                <i class="bi bi-geo-alt me-1 text-danger"></i> {{ item.pickup_address|truncatechars:40 }}
+              </div>
+              <div class="small text-muted mb-3">
+                <i class="bi bi-clock me-1 text-warning"></i> Remaining: <strong>{{ item.remaining_time_display }}</strong>
+              </div>
+
+              {% if item.active_claim %}
+                <div class="p-2 bg-primary bg-opacity-10 rounded border border-primary-subtle small mb-3">
+                  <div class="text-primary fw-bold"><i class="bi bi-person-check-fill me-1"></i> Claimed by:</div>
+                  <div>{{ item.active_claim.claimer.name }}</div>
+                  {% if item.active_claim.institution %}
+                    <div class="text-muted"><i class="bi bi-arrow-return-right me-1"></i> To: {{ item.active_claim.institution.user.name }}</div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="food-card-footer d-flex justify-content-between align-items-center">
+              <a href="{% url 'listings:listing_detail' item.listing_id %}" class="btn btn-outline-primary btn-sm fw-semibold">
+                <i class="bi bi-eye me-1"></i> View Details
+              </a>
+              <div class="d-flex gap-1">
+                {% if item.can_be_edited %}
+                  <a href="{% url 'listings:edit_listing' item.listing_id %}" class="btn btn-outline-secondary btn-sm" title="Edit Listing">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                {% endif %}
+                {% if item.can_be_cancelled %}
+                  <a href="{% url 'listings:cancel_listing' item.listing_id %}" class="btn btn-outline-danger btn-sm" title="Cancel Listing">
+                    <i class="bi bi-x-circle"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card p-5 text-center text-muted bg-white border-0 shadow-sm rounded-4">
+          <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+          <h4>No listings match this filter</h4>
+          <p class="mb-3">You do not have any food listings currently in this category.</p>
+          <div>
+            <a href="{% url 'listings:create_listing' %}" class="btn btn-success fw-bold">Post Surplus Food</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

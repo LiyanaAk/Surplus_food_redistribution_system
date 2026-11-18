@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Beneficiary Institution Verification Queue</h2>
+      <p class="text-muted small mb-0">Under Rule BR4, orphanages, shelters, and old-age homes must be verified by an administrator before receiving routed food.</p>
+    </div>
+    <div class="btn-group">
+      <a href="{% url 'core:admin_institutions' %}?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning fw-bold{% else %}btn-outline-secondary{% endif %}">
+        Pending (Verification Required)
+      </a>
+      <a href="{% url 'core:admin_institutions' %}?status=approved" class="btn btn-sm {% if status_filter == 'approved' %}btn-success fw-bold{% else %}btn-outline-secondary{% endif %}">
+        Approved Institutions
+      </a>
+      <a href="{% url 'core:admin_institutions' %}?status=all" class="btn btn-sm {% if status_filter == 'all' %}btn-dark fw-bold{% else %}btn-outline-secondary{% endif %}">
+        All Records
+      </a>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 p-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Institution Name</th>
+            <th>Type</th>
+            <th>Capacity</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Facility Address</th>
+            <th>Verification Status</th>
+            <th>Registered</th>
+            <th class="text-end">Verification Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if institutions %}
+            {% for inst in institutions %}
+              <tr>
+                <td>
+                  <strong>{{ inst.user.name }}</strong>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ inst.get_institution_type_display }}</span>
+                </td>
+                <td>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">
+                    {{ inst.capacity }} people
+                  </span>
+                </td>
+                <td>{{ inst.user.email }}</td>
+                <td>{{ inst.user.phone|default:"&mdash;" }}</td>
+                <td class="small">{{ inst.user.address|default:"&mdash;" }}</td>
+                <td>
+                  {% if inst.user.verification_status == 'approved' %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Approved</span>
+                  {% elif inst.user.verification_status == 'pending' %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
+                  {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ inst.user.created_at|date:"M d, Y" }}</td>
+                <td class="text-end">
+                  {% if inst.user.verification_status != 'approved' %}
+                    <a href="{% url 'core:admin_verify_user' inst.user.user_id 'approve' %}?next={{ request.get_full_path }}" class="btn btn-sm btn-success fw-semibold">
+                      <i class="bi bi-check-lg me-1"></i> Approve
+                    </a>
+                  {% endif %}
+                  {% if inst.user.verification_status != 'rejected' %}
+                    <a href="{% url 'core:admin_verify_user' inst.user.user_id 'reject' %}?next={{ request.get_full_path }}" class="btn btn-sm btn-outline-danger ms-1">
+                      <i class="bi bi-x-lg me-1"></i> Reject
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                No institution registrations match this status filter.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

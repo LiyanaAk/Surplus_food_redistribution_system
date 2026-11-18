@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">My Active Claims & Deliveries</h2>
+      <p class="text-muted small mb-0">Manage claimed surplus food currently undergoing pickup and transit.</p>
+    </div>
+    <a href="{% url 'claims:available_listings' %}" class="btn btn-warning fw-bold shadow-sm">
+      <i class="bi bi-geo-alt me-1"></i> Discover More Food
+    </a>
+  </div>
+
+  <div class="row g-4">
+    {% if active_claims %}
+      {% for c in active_claims %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 border-0 shadow-sm rounded-4 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary-subtle text-secondary border">Claim #{{ c.claim_id }}</span>
+              <span class="badge badge-{{ c.listing.status|lower }}">{{ c.listing.get_status_display }}</span>
+            </div>
+
+            <h5 class="fw-bold mb-1 text-truncate" title="{{ c.listing.food_type }}">
+              {{ c.listing.food_type }}
+            </h5>
+
+            <div class="small text-muted mb-2">
+              <i class="bi bi-shop me-1 text-success"></i> Donor: <strong>{{ c.listing.donor.name }}</strong>
+            </div>
+
+            <div class="small text-muted mb-2 d-flex justify-content-between align-items-center">
+              <span class="text-truncate"><i class="bi bi-geo-alt me-1 text-danger"></i> Pickup: {{ c.listing.pickup_address }}</span>
+              {% if c.listing.latitude and c.listing.longitude %}
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ c.listing.latitude }},{{ c.listing.longitude }}" target="_blank" rel="noopener" class="text-primary small text-decoration-none ms-1 flex-shrink-0" title="Get Directions in Google Maps">
+                  <i class="bi bi-compass"></i> Directions
+                </a>
+              {% endif %}
+            </div>
+
+            <div class="p-2 bg-light rounded small mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-secondary">Quantity:</span>
+                <strong>{{ c.listing.quantity }} {{ c.listing.quantity_unit }}</strong>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span class="text-secondary">Target:</span>
+                <span class="text-truncate" style="max-width: 150px;">
+                  {% if c.institution %}{{ c.institution.user.name }}{% elif c.recipient_note %}Homeless{% else %}Unassigned{% endif %}
+                </span>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-auto pt-2 border-top">
+              <a href="{% url 'claims:manage_delivery' c.claim_id %}" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
+                <i class="bi bi-arrow-repeat me-1"></i> Update Stage
+              </a>
+              {% if c.listing.status == 'CLAIMED' %}
+                <a href="{% url 'claims:release_claim' c.claim_id %}" class="btn btn-outline-danger btn-sm" title="Release Claim">
+                  <i class="bi bi-x-circle"></i>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card p-5 text-center text-muted bg-white border-0 shadow-sm rounded-4">
+          <i class="bi bi-truck fs-1 text-muted mb-3"></i>
+          <h4>No Active Claims</h4>
+          <p class="mb-3">You do not currently have any food claims in progress. Browse nearby food listings to begin rescue.</p>
+          <div>
+            <a href="{% url 'claims:available_listings' %}" class="btn btn-warning fw-bold">Find Available Food</a>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

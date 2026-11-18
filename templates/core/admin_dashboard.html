@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Administrator Governance Dashboard</h2>
+      <p class="text-muted small mb-0">System health, safety verification queue, listings lifecycle, and redistribution metrics.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'reports:reports_dashboard' %}" class="btn btn-outline-primary btn-sm fw-semibold">
+        <i class="bi bi-bar-chart-line me-1"></i> Reports & Analytics
+      </a>
+      <a href="{% url 'core:admin_configuration' %}" class="btn btn-outline-dark btn-sm fw-semibold">
+        <i class="bi bi-sliders me-1"></i> System Thresholds
+      </a>
+    </div>
+  </div>
+
+  <!-- Row 1: High Level Metrics -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-success">
+        <div class="metric-value text-success mb-1">{{ total_meals }}</div>
+        <div class="metric-label">Meals Served</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-primary">
+        <div class="metric-value text-primary mb-1">{{ total_listings }}</div>
+        <div class="metric-label">Total Listings</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-warning">
+        <div class="metric-value text-warning mb-1">{{ pending_verifications }}</div>
+        <div class="metric-label">Pending Verifications</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-info">
+        <div class="metric-value text-info mb-1">{{ total_users }}</div>
+        <div class="metric-label">Registered Users</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center" style="border-color: #0d9488;">
+        <div class="metric-value mb-1" style="color: #0d9488;">{{ delivered_listings }}</div>
+        <div class="metric-label">Delivered Batches</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="metric-card text-center border-secondary">
+        <div class="metric-value text-muted mb-1">{{ expired_listings }}</div>
+        <div class="metric-label">Expired Batches</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Charts & Visuals -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success me-2"></i> Food Listings Status Distribution</h5>
+        <div style="height: 280px;" class="position-relative">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i> Registered Stakeholders Distribution</h5>
+        <div style="height: 280px;" class="position-relative">
+          <canvas id="userChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Pending Approval Queue & Live System Activities -->
+  <div class="row g-4">
+    <!-- Pending Approvals -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-shield-exclamation text-warning me-2"></i> Pending Registrations Queue
+          </h5>
+          <span class="badge bg-warning text-dark">{{ pending_verifications }} pending</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>User / Organization</th>
+                <th>Role</th>
+                <th>Registered</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if pending_users %}
+                {% for pu in pending_users %}
+                  <tr>
+                    <td>
+                      <div class="fw-bold">{{ pu.name }}</div>
+                      <div class="text-muted small">{{ pu.email }}</div>
+                    </td>
+                    <td>
+                      <span class="badge {% if pu.role == 'ngo_volunteer' %}bg-info text-dark{% else %}bg-primary{% endif %}">
+                        {{ pu.get_role_display }}
+                      </span>
+                    </td>
+                    <td class="small text-muted">{{ pu.created_at|date:"M d, H:i" }}</td>
+                    <td class="text-end">
+                      <a href="{% url 'core:admin_verify_user' pu.user_id 'approve' %}?next={{ request.path }}" class="btn btn-sm btn-success py-1 px-2" title="Approve">
+                        <i class="bi bi-check-lg"></i> Approve
+                      </a>
+                      <a href="{% url 'core:admin_verify_user' pu.user_id 'reject' %}?next={{ request.path }}" class="btn btn-sm btn-outline-danger py-1 px-2" title="Reject">
+                        <i class="bi bi-x-lg"></i>
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">
+                    <i class="bi bi-check2-all text-success fs-3 d-block mb-1"></i>
+                    All registrations have been reviewed! Zero pending verifications.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live System Activity Feed -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-activity text-danger me-2"></i> Live System Audit Log (Status History)</h5>
+        <div class="list-group list-group-flush">
+          {% if recent_activities %}
+            {% for act in recent_activities %}
+              <div class="list-group-item px-0 py-2 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge badge-{{ act.status|lower }}">{{ act.status }}</span>
+                  <small class="text-muted">{{ act.changed_at|timesince }} ago</small>
+                </div>
+                <div class="fw-semibold small mt-1">
+                  Listing #{{ act.listing.listing_id }}: {{ act.listing.food_type }}
+                </div>
+                <div class="text-muted small">
+                  By: <strong>{{ act.changed_by.name|default:"Automated Priority Engine" }}</strong> &bull; {{ act.remarks|truncatechars:45 }}
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted text-center py-4">No activity history recorded yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Status Distribution Chart
+  const ctxStatus = document.getElementById('statusChart').getContext('2d');
+  new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: {
+      labels: ['Available', 'Claimed', 'Collected', 'In Transit', 'Delivered', 'Expired'],
+      datasets: [{
+        data: [
+          {{ available_listings }},
+          {{ claimed_listings }},
+          {{ collected_listings }},
+          {{ in_transit_listings }},
+          {{ delivered_listings }},
+          {{ expired_listings }}
+        ],
+        backgroundColor: [
+          '#059669', // Available
+          '#2563eb', // Claimed
+          '#7c3aed', // Collected
+          '#0891b2', // In Transit
+          '#0d9488', // Delivered
+          '#6b7280'  // Expired
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+
+  // User Distribution Chart
+  const ctxUser = document.getElementById('userChart').getContext('2d');
+  new Chart(ctxUser, {
+    type: 'pie',
+    data: {
+      labels: ['Donors', 'NGOs / Volunteers', 'Beneficiary Institutions'],
+      datasets: [{
+        data: [
+          {{ total_donors }},
+          {{ total_ngos }},
+          {{ total_institutions }}
+        ],
+        backgroundColor: [
+          '#10b981',
+          '#06b6d4',
+          '#3b82f6'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">Join FoodShare</h2>
+    <p class="text-muted">Share food. Reduce waste. Feed communities.</p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+    <!-- Donor Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center">
+        <div class="metric-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+          <i class="fa-solid fa-utensils fs-3"></i>
+        </div>
+        <h4 class="fw-bold">Food Donor</h4>
+        <p class="small text-muted mb-4">
+          Hotels, restaurants, bakeries, hostels, caterers, or households with excess food to donate.
+        </p>
+        <ul class="text-start small text-secondary mb-4 ps-3">
+          <li class="mb-2">Instant account setup</li>
+          <li class="mb-2">List food with pickup location</li>
+          <li class="mb-2">Get notified when volunteers claim</li>
+          <li class="mb-2">Track real-time meals delivered</li>
+        </ul>
+        <a href="{% url 'accounts:register_donor' %}" class="btn btn-success mt-auto py-2 fw-bold">
+          Register as Donor &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Volunteer Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center">
+        <div class="metric-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
+          <i class="fa-solid fa-truck-moving fs-3"></i>
+        </div>
+        <h4 class="fw-bold">NGO / Volunteer</h4>
+        <p class="small text-muted mb-4">
+          Volunteers and community organizations who collect food and deliver it to people in need.
+        </p>
+        <ul class="text-start small text-secondary mb-4 ps-3">
+          <li class="mb-2">Verified account for safety</li>
+          <li class="mb-2">Interactive map of nearby food</li>
+          <li class="mb-2">Quick 1-click claiming</li>
+          <li class="mb-2">Deliver to shelters or directly</li>
+        </ul>
+        <a href="{% url 'accounts:register_ngo' %}" class="btn btn-info mt-auto py-2 fw-bold text-dark">
+          Join as Volunteer &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Institution Card -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center">
+        <div class="metric-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+          <i class="fa-solid fa-house-chimney-window fs-3"></i>
+        </div>
+        <h4 class="fw-bold">Beneficiary Shelter</h4>
+        <p class="small text-muted mb-4">
+          Orphanages, old-age homes, night shelters, and community kitchens that need meal support.
+        </p>
+        <ul class="text-start small text-secondary mb-4 ps-3">
+          <li class="mb-2">State your resident capacity</li>
+          <li class="mb-2">Receive routed donations directly</li>
+          <li class="mb-2">Arrival alerts from volunteers</li>
+          <li class="mb-2">Full history of received food</li>
+        </ul>
+        <a href="{% url 'accounts:register_institution' %}" class="btn btn-primary mt-auto py-2 fw-bold">
+          Register Shelter &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-5">
+    <span class="text-muted small">Already have an account?</span>
+    <a href="{% url 'accounts:login' %}" class="text-success fw-bold text-decoration-none ms-1">Log in here</a>
+  </div>
+</div>
+{% endblock %}

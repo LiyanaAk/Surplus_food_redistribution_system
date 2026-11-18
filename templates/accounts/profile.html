@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'core:dashboard_router' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Profile</li>
+        </ol>
+      </nav>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">{{ user.name }}</h3>
+            <span class="badge bg-secondary me-2">{{ user.get_role_display }}</span>
+            {% if user.verification_status == 'approved' %}
+              <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i> Verified</span>
+            {% elif user.verification_status == 'pending' %}
+              <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i> Pending Verification</span>
+            {% else %}
+              <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+          </div>
+          <div class="metric-icon bg-light text-muted">
+            <i class="bi bi-person-badge fs-2"></i>
+          </div>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Account Email (Immutable)</label>
+              <input type="email" class="form-control bg-light" value="{{ user.email }}" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Full / Organization Name</label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Phone Number</label>
+              {{ form.phone }}
+              {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Joined On</label>
+              <input type="text" class="form-control bg-light" value="{{ user.created_at|date:'M d, Y H:i' }}" readonly>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-secondary">Physical / Pickup Address</label>
+              {{ form.address }}
+              {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <div class="d-flex flex-wrap justify-content-between align-items-center mb-1">
+                <label class="form-label fw-semibold small text-secondary mb-0">Location Coordinates (Map Pin)</label>
+                <div class="d-flex gap-2 align-items-center mt-1 mt-sm-0">
+                  <span id="location-status-badge" class="badge bg-light text-secondary border py-1 px-2">
+                    <i class="bi bi-geo-alt me-1"></i> Pin on map
+                  </span>
+                  <button type="button" id="btn-locate-me" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-crosshair me-1"></i> Use My Current Location
+                  </button>
+                </div>
+              </div>
+              <div class="input-group mb-2">
+                <input type="text" id="input-search-address" class="form-control form-control-sm" placeholder="Search landmark, street, or city to locate on map...">
+                <button type="button" id="btn-search-address" class="btn btn-outline-secondary btn-sm px-3">
+                  <i class="bi bi-search me-1"></i> Locate on Map
+                </button>
+              </div>
+              <div id="map-picker" class="leaflet-map mb-1 rounded-3 border" style="height: 250px;"></div>
+              <small class="text-muted d-block">
+                <i class="bi bi-info-circle me-1"></i> Drag pin or click map to set location. Coordinates are saved automatically without manual entry.
+              </small>
+              {{ form.latitude }}
+              {{ form.longitude }}
+            </div>
+
+            <div class="col-12 mt-4 text-end">
+              <button type="submit" class="btn btn-primary-green px-4 fw-bold shadow-sm">
+                Save Profile Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  window.initLocationPicker({
+    mapId: 'map-picker',
+    latInputId: 'id_latitude',
+    lngInputId: 'id_longitude',
+    addressInputId: 'id_address',
+    searchInputId: 'input-search-address',
+    locateBtnId: 'btn-locate-me',
+    searchBtnId: 'btn-search-address',
+    statusId: 'location-status-badge',
+    defaultLat: 27.8974,
+    defaultLng: 78.0880
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Database (optional - keep db.sqlite3 if distributing pre-seeded demo)
+# db.sqlite3
+
+# Django media files
+media/
+
+# Environment variables
+.env
+
+# Static files directory
+staticfiles/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+Desktop.ini

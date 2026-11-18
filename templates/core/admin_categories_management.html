@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Food Categories</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Add Category Form -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-tag-fill text-success me-2"></i> Add Food Category</h5>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Category Name <span class="text-danger">*</span></label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+            <small class="text-muted">e.g., Dairy Products, Fresh Fruits, Cooked Rice & Curries</small>
+          </div>
+          <button type="submit" class="btn btn-primary-green fw-bold w-100 shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Create Category
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Existing Categories List -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h5 class="fw-bold mb-3">Existing Food Categories</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Category Name</th>
+                <th>Active Listings</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if categories %}
+                {% for cat in categories %}
+                  <tr>
+                    <td class="fw-semibold">#{{ cat.category_id }}</td>
+                    <td><strong>{{ cat.name }}</strong></td>
+                    <td>
+                      <span class="badge bg-secondary-subtle text-secondary border">
+                        {{ cat.listing_count }} listings
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'core:admin_delete_category' cat.category_id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete category {{ cat.name }}?');">
+                        <i class="bi bi-trash"></i> Delete
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">
+                    No categories defined yet.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

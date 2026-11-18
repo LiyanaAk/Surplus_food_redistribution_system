@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'core:dashboard_router' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Listing #{{ listing.listing_id }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Left Column: Food Details & Status -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+          <div>
+            <span class="badge bg-secondary-subtle text-secondary border me-1">{{ listing.category.name }}</span>
+            <span class="badge badge-{{ listing.status|lower }}">{{ listing.get_status_display }}</span>
+            <h2 class="fw-bold mt-2 mb-1">{{ listing.food_type }}</h2>
+            <div class="text-muted small">Donated by <strong>{{ listing.donor.name }}</strong> &bull; {{ listing.created_at|date:"M d, Y H:i" }}</div>
+          </div>
+          <div class="text-end">
+            {% if listing.priority == 'URGENT' %}
+              <div class="badge badge-urgent px-3 py-2 fs-6 mb-1"><i class="bi bi-fire me-1"></i> URGENT</div>
+            {% elif listing.priority == 'HIGH' %}
+              <div class="badge badge-high px-3 py-2 fs-6 mb-1"><i class="bi bi-clock me-1"></i> HIGH PRIORITY</div>
+            {% else %}
+              <div class="badge badge-normal px-3 py-2 fs-6 mb-1">NORMAL PRIORITY</div>
+            {% endif %}
+            <div class="small fw-bold text-danger"><i class="bi bi-stopwatch"></i> {{ listing.remaining_time_display }}</div>
+          </div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="p-3 bg-light rounded-3 text-center">
+              <div class="text-muted small">Quantity</div>
+              <div class="fw-bold fs-5 text-dark">{{ listing.quantity }} {{ listing.quantity_unit }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 bg-light rounded-3 text-center">
+              <div class="text-muted small">Prepared At</div>
+              <div class="fw-semibold small text-dark mt-1">{{ listing.prepared_at|date:"M d, H:i" }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 bg-light rounded-3 text-center">
+              <div class="text-muted small">Safe Usable Until</div>
+              <div class="fw-semibold small text-danger mt-1">{{ listing.usable_until|date:"M d, H:i" }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 bg-light rounded-3 text-center">
+              <div class="text-muted small">Safety Checked</div>
+              <div class="fw-bold text-success mt-1"><i class="bi bi-patch-check-fill"></i> Safe & Fresh</div>
+            </div>
+          </div>
+        </div>
+
+        {% if listing.description %}
+          <div class="mb-4">
+            <h6 class="fw-bold text-secondary small text-uppercase mb-2">Notes</h6>
+            <div class="p-3 bg-light rounded-3 text-dark small">
+              {{ listing.description|linebreaksbr }}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-secondary small text-uppercase mb-0">Pickup Location</h6>
+            {% if listing.latitude and listing.longitude %}
+              <a href="https://www.google.com/maps/dir/?api=1&destination={{ listing.latitude }},{{ listing.longitude }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary fw-semibold mt-1 mt-sm-0">
+                <i class="bi bi-compass-fill me-1"></i> Get Directions (Google Maps)
+              </a>
+            {% elif listing.pickup_address %}
+              <a href="https://www.google.com/maps/dir/?api=1&destination={{ listing.pickup_address|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary fw-semibold mt-1 mt-sm-0">
+                <i class="bi bi-compass-fill me-1"></i> Get Directions (Google Maps)
+              </a>
+            {% endif %}
+          </div>
+          <p class="mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ listing.pickup_address }}</p>
+          {% if listing.donor.phone and user == listing.donor or is_claimant or user.is_admin_user %}
+            <p class="small text-muted mb-2"><i class="bi bi-telephone-fill text-success me-1"></i> Contact: <strong>{{ listing.donor.phone }}</strong> ({{ listing.donor.email }})</p>
+          {% endif %}
+          <div id="listing-map" class="leaflet-map mt-2 rounded-3 border" style="height: 280px;"></div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+          {% if user.is_ngo and listing.status == 'AVAILABLE' %}
+            <a href="{% url 'claims:claim_listing' listing.listing_id %}" class="btn btn-warning btn-lg fw-bold px-4 shadow-sm">
+              <i class="bi bi-bag-check-fill me-1"></i> Claim Food
+            </a>
+          {% endif %}
+
+          {% if is_claimant %}
+            <a href="{% url 'claims:manage_delivery' active_claim.claim_id %}" class="btn btn-primary btn-lg fw-bold px-4">
+              <i class="bi bi-truck me-1"></i> Update Delivery
+            </a>
+            {% if listing.status == 'CLAIMED' %}
+              <a href="{% url 'claims:release_claim' active_claim.claim_id %}" class="btn btn-outline-danger btn-lg px-3">
+                <i class="bi bi-x-circle me-1"></i> Release
+              </a>
+            {% endif %}
+          {% endif %}
+
+          {% if user == listing.donor and listing.can_be_edited %}
+            <a href="{% url 'listings:edit_listing' listing.listing_id %}" class="btn btn-outline-secondary px-4 fw-semibold">
+              <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+            <a href="{% url 'listings:cancel_listing' listing.listing_id %}" class="btn btn-outline-danger px-4 fw-semibold">
+              <i class="bi bi-x-circle me-1"></i> Cancel
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Status History & Suggested Institutions -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success me-2"></i> Activity Updates</h5>
+        <ul class="timeline mb-0">
+          {% for record in history_records %}
+            <li class="timeline-item completed">
+              <div class="fw-bold small text-dark">{{ record.status }}</div>
+              <div class="small text-muted">{{ record.changed_at|date:"M d, H:i" }}</div>
+              {% if record.changed_by %}
+                <div class="small text-secondary"><i class="bi bi-person me-1"></i> {{ record.changed_by.name }}</div>
+              {% else %}
+                <div class="small text-secondary"><i class="bi bi-cpu me-1"></i> Automated Update</div>
+              {% endif %}
+              {% if record.remarks %}
+                <div class="small fst-italic text-muted mt-1 bg-light p-2 rounded">{{ record.remarks }}</div>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="timeline-item">
+              <div class="small text-muted">Listing posted</div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h5 class="fw-bold mb-1"><i class="bi bi-building text-primary me-2"></i> Suggested Beneficiaries</h5>
+        <p class="text-muted small mb-3">Nearby shelters ready to receive food donations:</p>
+
+        {% if suggested_institutions %}
+          <div class="list-group list-group-flush">
+            {% for inst in suggested_institutions %}
+              <div class="list-group-item px-0 py-2 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong class="text-dark small">{{ inst.user.name }}</strong>
+                  <span class="badge bg-light text-dark border">{{ inst.get_institution_type_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small mt-1">
+                  <span>Capacity: {{ inst.capacity }}</span>
+                  <span><i class="bi bi-geo-alt text-danger"></i> {{ inst.user.address|truncatechars:25 }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted small">No verified institutions found in nearby radius.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const lat = parseFloat("{{ listing.latitude|default:'27.8974' }}");
+  const lng = parseFloat("{{ listing.longitude|default:'78.0880' }}");
+
+  const map = L.map('listing-map').setView([lat, lng], 14);
+  window.createAppTileLayer().addTo(map);
+  setTimeout(function() { map.invalidateSize(); }, 250);
+
+  const marker = L.marker([lat, lng]).addTo(map);
+  const popupHtml = `
+    <div style="min-width: 200px;">
+      <strong style="color: #1b4332;">${"{{ listing.food_type|escapejs }}"}</strong><br>
+      <small class="text-muted">${"{{ listing.pickup_address|escapejs }}"}</small><br>
+      <div class="mt-2 text-center">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener" class="btn btn-sm btn-primary py-1 px-2 text-white text-decoration-none" style="font-size: 0.8rem;">
+          <i class="bi bi-compass-fill me-1"></i> Open Google Maps Directions
+        </a>
+      </div>
+    </div>
+  `;
+  marker.bindPopup(popupHtml).openPopup();
+});
+</script>
+{% endblock %}

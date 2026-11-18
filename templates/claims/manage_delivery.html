@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'claims:my_claims' %}">My Claims</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Delivery Tracking #{{ claim.claim_id }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Left Column: Status Update Controls -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <span class="badge bg-secondary-subtle text-secondary border me-1">Claim #{{ claim.claim_id }}</span>
+            <span class="badge badge-{{ listing.status|lower }} fs-6">{{ listing.get_status_display }}</span>
+          </div>
+          <div class="text-muted small">
+            Claimed at: {{ claim.claimed_at|date:"M d, H:i" }}
+          </div>
+        </div>
+
+        <h3 class="fw-bold mb-2">{{ listing.food_type }}</h3>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <p class="text-secondary small mb-0">
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i> Pickup: <strong>{{ listing.pickup_address }}</strong>
+            <br>
+            <i class="bi bi-shop text-success me-1"></i> Donor: <strong>{{ listing.donor.name }}</strong> (Tel: {{ listing.donor.phone }})
+          </p>
+          {% if listing.latitude and listing.longitude %}
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ listing.latitude }},{{ listing.longitude }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary fw-semibold mt-2 mt-sm-0">
+              <i class="bi bi-compass-fill me-1"></i> Navigate via Google Maps
+            </a>
+          {% elif listing.pickup_address %}
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ listing.pickup_address|urlencode }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary fw-semibold mt-2 mt-sm-0">
+              <i class="bi bi-compass-fill me-1"></i> Navigate via Google Maps
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Current Progress Tracker -->
+        <div class="p-3 bg-light rounded-4 mb-4 border">
+          <div class="small fw-bold text-secondary text-uppercase mb-2">Delivery Lifecycle Stages</div>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="badge {% if listing.status in 'CLAIMED,COLLECTED,IN_TRANSIT,DELIVERED' %}bg-primary{% else %}bg-secondary{% endif %} py-2 px-3">
+              1. Claimed
+            </span>
+            <i class="bi bi-chevron-right text-muted"></i>
+            <span class="badge {% if listing.status in 'COLLECTED,IN_TRANSIT,DELIVERED' %}bg-info text-dark{% else %}bg-secondary{% endif %} py-2 px-3">
+              2. Collected
+            </span>
+            <i class="bi bi-chevron-right text-muted"></i>
+            <span class="badge {% if listing.status in 'IN_TRANSIT,DELIVERED' %}bg-warning text-dark{% else %}bg-secondary{% endif %} py-2 px-3">
+              3. In Transit
+            </span>
+            <i class="bi bi-chevron-right text-muted"></i>
+            <span class="badge {% if listing.status == 'DELIVERED' %}bg-success{% else %}bg-secondary{% endif %} py-2 px-3">
+              4. Delivered
+            </span>
+          </div>
+        </div>
+
+        {% if listing.status == 'DELIVERED' %}
+          <div class="alert alert-success rounded-3 py-3 mb-4">
+            <h5 class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-2"></i> Food Delivery Complete!</h5>
+            <p class="mb-0 small">
+              This donation has been marked successfully delivered. Impact recorded: <strong>{{ claim.meals_delivered }} meals</strong> delivered to
+              {% if claim.institution %}
+                institution <strong>{{ claim.institution.user.name }}</strong>.
+              {% else %}
+                homeless recipients ({{ claim.recipient_note }}).
+              {% endif %}
+            </p>
+          </div>
+        {% else %}
+          <!-- Status Update Form -->
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger py-2 small mb-3">{{ form.non_field_errors.0 }}</div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-dark">Advance Stage To <span class="text-danger">*</span></label>
+              {{ form.status }}
+              {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Recipient Type Selection -->
+            <div id="recipient-section" class="p-3 bg-light rounded-3 mb-3 border">
+              <label class="form-label fw-bold text-dark mb-2">Recipient Category</label>
+              <div class="mb-3">
+                {% for radio in form.recipient_type %}
+                  <div class="form-check mb-2">
+                    {{ radio.tag }}
+                    <label class="form-check-label fw-semibold text-secondary" for="{{ radio.id_for_label }}">
+                      {{ radio.choice_label }}
+                    </label>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <!-- Institution Selector -->
+              <div id="institution-picker-div" class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">Select Beneficiary Institution</label>
+                {{ form.institution }}
+                {% if form.institution.errors %}<div class="text-danger small">{{ form.institution.errors.0 }}</div>{% endif %}
+              </div>
+
+              <!-- Homeless Manual Details -->
+              <div id="homeless-note-div" class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">
+                  Manual Distribution Log for Homeless Individuals <span class="text-danger">*</span>
+                </label>
+                {{ form.recipient_note }}
+                {% if form.recipient_note.errors %}<div class="text-danger small">{{ form.recipient_note.errors.0 }}</div>{% endif %}
+                <small class="text-muted">Specify distribution spot, approximate count of homeless individuals, or group notes.</small>
+              </div>
+
+              <!-- Meals Delivered Count -->
+              <div class="mb-2">
+                <label class="form-label small fw-semibold text-secondary">
+                  Meals Served / Delivered Count (Required upon Delivered status)
+                </label>
+                {{ form.meals_delivered }}
+                {% if form.meals_delivered.errors %}<div class="text-danger small">{{ form.meals_delivered.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label small fw-semibold text-secondary">Progress Remarks / Audit Notes</label>
+              {{ form.remarks }}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              {% if listing.status == 'CLAIMED' %}
+                <a href="{% url 'claims:release_claim' claim.claim_id %}" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-x-circle me-1"></i> Release Claim
+                </a>
+              {% else %}
+                <span></span>
+              {% endif %}
+
+              <button type="submit" class="btn btn-primary-green btn-lg px-4 fw-bold shadow-sm">
+                <i class="bi bi-arrow-repeat me-1"></i> Update Delivery Status
+              </button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column: Status History Timeline & Suggested Destinations -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success me-2"></i> Audit Status History</h5>
+        <ul class="timeline mb-0">
+          {% for h in history_records %}
+            <li class="timeline-item completed">
+              <div class="fw-bold small text-dark">{{ h.status }}</div>
+              <div class="small text-muted">{{ h.changed_at|date:"M d, H:i" }}</div>
+              <div class="small text-secondary">
+                <i class="bi bi-person me-1"></i> {{ h.changed_by.name|default:"System Engine" }}
+              </div>
+              {% if h.remarks %}
+                <div class="small fst-italic text-muted mt-1 bg-light p-2 rounded">{{ h.remarks }}</div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Suggested Institutions Card -->
+      <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h6 class="fw-bold text-secondary small text-uppercase mb-2">Nearest Registered Institutions</h6>
+        <div class="list-group list-group-flush">
+          {% for inst in suggested_institutions %}
+            <div class="list-group-item px-0 py-2 border-bottom">
+              <div class="d-flex justify-content-between align-items-center">
+                <strong class="text-dark small">{{ inst.user.name }}</strong>
+                <span class="badge bg-light text-dark border">{{ inst.get_institution_type_display }}</span>
+              </div>
+              <div class="small text-muted mt-1">
+                <span>Cap: {{ inst.capacity }} people</span> &bull;
+                <span class="text-truncate d-inline-block align-bottom" style="max-width: 170px;">{{ inst.user.address }}</span>
+              </div>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="chooseInst('{{ inst.institution_id }}')">
+                Use as Recipient &rarr;
+              </button>
+            </div>
+          {% empty %}
+            <div class="small text-muted">No institutions nearby. You may deliver to homeless communities.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const radioInstitution = document.querySelector('input[name="recipient_type"][value="institution"]');
+  const radioHomeless = document.querySelector('input[name="recipient_type"][value="homeless"]');
+  const instDiv = document.getElementById('institution-picker-div');
+  const homelessDiv = document.getElementById('homeless-note-div');
+
+  function toggleRecipientFields() {
+    if (radioInstitution && radioInstitution.checked) {
+      if (instDiv) instDiv.style.display = 'block';
+      if (homelessDiv) homelessDiv.style.display = 'none';
+    } else {
+      if (instDiv) instDiv.style.display = 'none';
+      if (homelessDiv) homelessDiv.style.display = 'block';
+    }
+  }
+
+  if (radioInstitution && radioHomeless) {
+    radioInstitution.addEventListener('change', toggleRecipientFields);
+    radioHomeless.addEventListener('change', toggleRecipientFields);
+    toggleRecipientFields();
+  }
+});
+
+function chooseInst(id) {
+  const sel = document.getElementById('id_institution_select');
+  if (sel) {
+    sel.value = id;
+    const radioInst = document.querySelector('input[name="recipient_type"][value="institution"]');
+    if (radioInst) {
+      radioInst.checked = true;
+      radioInst.dispatchEvent(new Event('change'));
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+        <div class="metric-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+          <i class="bi bi-arrow-counterclockwise fs-3 text-warning-emphasis"></i>
+        </div>
+        <h4 class="fw-bold mb-2">Release Food Claim?</h4>
+        <p class="text-secondary small mb-4">
+          You can release claim <strong>#{{ claim.claim_id }}</strong> on <strong>{{ claim.listing.food_type }}</strong> before collection. The food listing will immediately return to <strong>AVAILABLE</strong> status so another nearby NGO can rescue it.
+        </p>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3 text-start">
+            <label class="form-label small fw-semibold text-secondary">Reason for release (Optional)</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g. Volunteer vehicle breakdown, re-routed to emergency site">
+          </div>
+
+          <div class="d-flex gap-2 justify-content-center">
+            <a href="{% url 'claims:my_claims' %}" class="btn btn-outline-secondary px-4 fw-semibold">Keep Claim</a>
+            <button type="submit" class="btn btn-danger px-4 fw-bold">Confirm Release & Return to Available</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

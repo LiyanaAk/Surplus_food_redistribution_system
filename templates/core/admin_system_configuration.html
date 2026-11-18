@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'core:admin_dashboard' %}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">System Configuration</li>
+        </ol>
+      </nav>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="metric-icon bg-secondary bg-opacity-10 text-secondary">
+            <i class="bi bi-sliders fs-4"></i>
+          </div>
+          <div>
+            <h3 class="fw-bold mb-0">System Parameters & Priority Thresholds</h3>
+            <p class="text-muted small mb-0">Configure priority automation and proximity radius matching thresholds.</p>
+          </div>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small mb-4">
+              {{ form.non_field_errors.0 }}
+            </div>
+          {% endif %}
+
+          <div class="row g-4">
+            <!-- Priority Configuration -->
+            <div class="col-12">
+              <div class="p-3 bg-light rounded-4 border">
+                <h5 class="fw-bold text-dark mb-2"><i class="bi bi-clock-history text-danger me-2"></i> Dynamic Priority Thresholds</h5>
+                <p class="small text-secondary mb-3">
+                  Food listings continuously recalculate remaining safe usable time vs server time (IST). When safe time falls below these configurable thresholds, priority is elevated to alert nearby volunteers.
+                </p>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-secondary">Urgent Threshold (Minutes)</label>
+                    <div class="input-group">
+                      {{ form.urgent_threshold_minutes }}
+                      <span class="input-group-text">minutes</span>
+                    </div>
+                    {% if form.urgent_threshold_minutes.errors %}<div class="text-danger small">{{ form.urgent_threshold_minutes.errors.0 }}</div>{% endif %}
+                    <small class="text-muted">Default: 60 minutes (&le; 1 hour remaining)</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-secondary">High Priority Threshold (Minutes)</label>
+                    <div class="input-group">
+                      {{ form.high_threshold_minutes }}
+                      <span class="input-group-text">minutes</span>
+                    </div>
+                    {% if form.high_threshold_minutes.errors %}<div class="text-danger small">{{ form.high_threshold_minutes.errors.0 }}</div>{% endif %}
+                    <small class="text-muted">Default: 180 minutes (&le; 3 hours remaining)</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Proximity Radius Configuration -->
+            <div class="col-12">
+              <div class="p-3 bg-light rounded-4 border">
+                <h5 class="fw-bold text-dark mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i> Default Proximity Radius</h5>
+                <p class="small text-secondary mb-3">
+                  Default radius within which volunteer alert notifications and nearby listings discovery operate using the Haversine great-circle formula.
+                </p>
+
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold text-secondary">Default Search Radius (Kilometers)</label>
+                  <div class="input-group">
+                    {{ form.default_search_radius_km }}
+                    <span class="input-group-text">km</span>
+                  </div>
+                  {% if form.default_search_radius_km.errors %}<div class="text-danger small">{{ form.default_search_radius_km.errors.0 }}</div>{% endif %}
+                  <small class="text-muted">Default: 10 km (admin-configurable)</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 text-end">
+              <button type="submit" class="btn btn-primary-green btn-lg px-5 fw-bold shadow-sm">
+                Save & Apply Thresholds Immediately
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

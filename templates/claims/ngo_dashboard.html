@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1">Volunteer Dashboard</h2>
+      <p class="text-muted small mb-0">Welcome, {{ user.name }}! Rescue surplus food and deliver it to local communities.</p>
+    </div>
+    <div>
+      <a href="{% url 'claims:available_listings' %}" class="btn btn-warning btn-lg fw-bold shadow-sm">
+        <i class="bi bi-geo-alt-fill me-1"></i> Find Available Food
+      </a>
+    </div>
+  </div>
+
+  {% if not is_approved %}
+    <div class="alert alert-warning border-warning shadow-sm rounded-3 mb-4">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-shield-exclamation text-warning-emphasis fs-3 me-3"></i>
+        <div>
+          <h5 class="fw-bold mb-1">Account Pending Verification</h5>
+          <p class="small mb-0">
+            Your volunteer account is currently being reviewed by an administrator. You can view available food listings, and claiming will be enabled once your account is approved.
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Metric Statistics Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center border-warning">
+        <div class="metric-value text-warning mb-1">{{ available_count }}</div>
+        <div class="metric-label">Available Now</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center border-primary">
+        <div class="metric-value text-primary mb-1">{{ pending_collection_count }}</div>
+        <div class="metric-label">To Pick Up</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center border-info">
+        <div class="metric-value text-info mb-1">{{ collected_count }}</div>
+        <div class="metric-label">Collected</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center" style="border-color: #6366f1;">
+        <div class="metric-value mb-1" style="color: #6366f1;">{{ in_transit_count }}</div>
+        <div class="metric-label">In Transit</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center border-success">
+        <div class="metric-value text-success mb-1">{{ completed_count }}</div>
+        <div class="metric-label">Delivered</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="metric-card text-center" style="border-color: #0d9488;">
+        <div class="metric-value mb-1" style="color: #0d9488;">{{ total_meals_delivered }}</div>
+        <div class="metric-label">Meals Served</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Claims & Deliveries Queue -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">My Active Pickups & Deliveries</h5>
+      <a href="{% url 'claims:my_claims' %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+        View All &rarr;
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Claim ID</th>
+            <th>Food Item</th>
+            <th>Quantity</th>
+            <th>Pickup Location</th>
+            <th>Destination</th>
+            <th>Current Stage</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_claims %}
+            {% for c in recent_claims %}
+              <tr>
+                <td class="fw-semibold">#{{ c.claim_id }}</td>
+                <td>
+                  <a href="{% url 'listings:listing_detail' c.listing.listing_id %}" class="text-dark fw-bold text-decoration-none">
+                    {{ c.listing.food_type }}
+                  </a>
+                  <div class="text-muted small">Claimed: {{ c.claimed_at|date:"M d, H:i" }}</div>
+                </td>
+                <td><strong>{{ c.listing.quantity }}</strong> {{ c.listing.quantity_unit }}</td>
+                <td>
+                  <div class="small fw-semibold">{{ c.listing.donor.name }}</div>
+                  <div class="text-muted small text-truncate" style="max-width: 220px;">{{ c.listing.pickup_address }}</div>
+                </td>
+                <td>
+                  {% if c.institution %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                      <i class="bi bi-building me-1"></i> {{ c.institution.user.name }}
+                    </span>
+                  {% elif c.recipient_note %}
+                    <span class="badge bg-secondary-subtle text-dark border">
+                      <i class="bi bi-people me-1"></i> Direct Distribution
+                    </span>
+                  {% else %}
+                    <span class="text-muted small">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-{{ c.listing.status|lower }}">{{ c.listing.get_status_display }}</span>
+                </td>
+                <td class="text-end">
+                  {% if c.is_active and c.listing.status != 'DELIVERED' and c.listing.status != 'EXPIRED' and c.listing.status != 'CANCELLED' %}
+                    <a href="{% url 'claims:manage_delivery' c.claim_id %}" class="btn btn-sm btn-primary fw-semibold">
+                      <i class="bi bi-arrow-repeat me-1"></i> Update Stage
+                    </a>
+                  {% else %}
+                    <a href="{% url 'listings:listing_detail' c.listing.listing_id %}" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-eye"></i> Details
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                You haven't claimed any surplus food batches yet.
+                <div class="mt-2">
+                  <a href="{% url 'claims:available_listings' %}" class="btn btn-warning btn-sm fw-bold">Explore Available Food</a>
+                </div>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

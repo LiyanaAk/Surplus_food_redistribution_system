@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">How It Works</li>
+        </ol>
+      </nav>
+
+      <div class="text-center mb-5">
+        <h1 class="fw-bold">How FoodShare Works</h1>
+        <p class="text-muted">A simple, transparent way to rescue food and feed communities</p>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
+        <!-- Step 1 -->
+        <div class="row g-4 align-items-center mb-5">
+          <div class="col-md-2 text-center">
+            <div class="display-4 fw-bold text-success">1</div>
+          </div>
+          <div class="col-md-10">
+            <h4 class="fw-bold mb-2">Post Surplus Food</h4>
+            <p class="text-secondary mb-0">
+              Hotels, restaurants, bakeries, or households list extra fresh food by providing quantity, safe consumption time, pickup address, and confirming that the food has been safely prepared.
+            </p>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Step 2 -->
+        <div class="row g-4 align-items-center my-4">
+          <div class="col-md-2 text-center">
+            <div class="display-4 fw-bold text-warning">2</div>
+          </div>
+          <div class="col-md-10">
+            <h4 class="fw-bold mb-2">Instant Priority & Alerts</h4>
+            <p class="text-secondary mb-0">
+              Food with less remaining safe time is automatically tagged as <strong>Urgent</strong> or <strong>High Priority</strong>, notifying nearby volunteers so it gets collected quickly.
+            </p>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Step 3 -->
+        <div class="row g-4 align-items-center my-4">
+          <div class="col-md-2 text-center">
+            <div class="display-4 fw-bold text-primary">3</div>
+          </div>
+          <div class="col-md-10">
+            <h4 class="fw-bold mb-2">Volunteer Claims & Collects</h4>
+            <p class="text-secondary mb-0">
+              Approved volunteers check the map, claim the food, and travel to the pickup address to collect the containers.
+            </p>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Step 4 -->
+        <div class="row g-4 align-items-center mt-4">
+          <div class="col-md-2 text-center">
+            <div class="display-4 fw-bold text-info">4</div>
+          </div>
+          <div class="col-md-10">
+            <h4 class="fw-bold mb-2">Safe Delivery to People in Need</h4>
+            <p class="text-secondary mb-0">
+              The food is handed over to a registered shelter, orphanage, or distributed directly to people in need, logging meals served so donors can track their real impact.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

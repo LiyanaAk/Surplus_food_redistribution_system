@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center text-md-start mb-5 rounded-3 mx-2 mx-md-4 shadow-sm">
+  <div class="container py-4">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">
+          <i class="bi bi-heart-fill text-danger me-1"></i> Food Rescue Network
+        </span>
+        <h1 class="hero-title mb-3">
+          Share Food.<br>Reduce Waste.<br>Feed Communities.
+        </h1>
+        <p class="hero-subtitle mb-4">
+          Connect hotels, restaurants, cafes, and homes with local volunteers and shelters to deliver fresh, edible surplus food where it is needed most.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
+          {% if user.is_authenticated %}
+            <a href="{% url 'core:dashboard_router' %}" class="btn btn-warning btn-lg fw-bold shadow-sm px-4">
+              <i class="bi bi-speedometer2 me-2"></i> Go to Dashboard
+            </a>
+            {% if user.is_donor %}
+              <a href="{% url 'listings:create_listing' %}" class="btn btn-outline-light btn-lg fw-semibold px-4">
+                <i class="bi bi-plus-circle me-2"></i> Donate Food
+              </a>
+            {% elif user.is_ngo %}
+              <a href="{% url 'claims:available_listings' %}" class="btn btn-outline-light btn-lg fw-semibold px-4">
+                <i class="bi bi-search me-2"></i> Available Food
+              </a>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'accounts:register_donor' %}" class="btn btn-warning btn-lg fw-bold shadow-sm px-4">
+              <i class="bi bi-box2-heart me-2"></i> Donate Food
+            </a>
+            <a href="{% url 'accounts:register_ngo' %}" class="btn btn-outline-light btn-lg fw-semibold px-4">
+              <i class="bi bi-truck me-2"></i> Volunteer
+            </a>
+            <a href="{% url 'accounts:register_institution' %}" class="btn btn-link text-white text-decoration-none d-flex align-items-center">
+              Register a Shelter &rarr;
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block text-center">
+        <div class="p-4 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-25 backdrop-blur shadow">
+          <div class="d-flex align-items-center justify-content-center mb-3">
+            <i class="fa-solid fa-bowl-food text-warning fa-3x"></i>
+          </div>
+          <h4 class="text-white fw-bold mb-1">Fast & Fresh Pickup</h4>
+          <p class="text-white-50 small mb-3">Surplus food is picked up quickly while it's fresh and ready to eat.</p>
+          <div class="row g-2 text-start">
+            <div class="col-6">
+              <div class="bg-dark bg-opacity-25 p-2 rounded text-center">
+                <div class="text-danger fw-bold fs-5"><i class="bi bi-fire"></i> Urgent</div>
+                <small class="text-white-50">&le; 1 hour remaining</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-dark bg-opacity-25 p-2 rounded text-center">
+                <div class="text-warning fw-bold fs-5"><i class="bi bi-clock"></i> High</div>
+                <small class="text-white-50">&le; 3 hours remaining</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Impact Counters -->
+<div class="container mb-5">
+  <div class="row g-3 text-center">
+    <div class="col-6 col-md-3">
+      <div class="metric-card">
+        <div class="metric-value text-success mb-1">{{ total_meals|default:"0" }}</div>
+        <div class="metric-label">Meals Served</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card">
+        <div class="metric-value text-primary mb-1">{{ total_listings }}</div>
+        <div class="metric-label">Food Donations</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card">
+        <div class="metric-value text-warning mb-1">{{ active_available }}</div>
+        <div class="metric-label">Available Now</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="metric-card">
+        <div class="metric-value text-info mb-1">{{ total_ngos }}</div>
+        <div class="metric-label">Volunteers & NGOs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Available Food Live Feed -->
+<div class="container mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-0">Food Available for Pickup</h3>
+      <p class="text-muted small mb-0">Fresh food ready for collection right now</p>
+    </div>
+    <a href="{% url 'claims:available_listings' %}" class="btn btn-outline-success btn-sm fw-semibold">
+      View All &rarr;
+    </a>
+  </div>
+
+  <div class="row g-4">
+    {% if sample_available %}
+      {% for item in sample_available %}
+        <div class="col-md-6 col-lg-3">
+          <div class="food-card shadow-sm">
+            <div class="food-card-header bg-light">
+              <span class="badge bg-secondary-subtle text-secondary border">{{ item.category.name }}</span>
+              {% if item.priority == 'URGENT' %}
+                <span class="badge badge-urgent"><i class="bi bi-fire"></i> Urgent</span>
+              {% elif item.priority == 'HIGH' %}
+                <span class="badge badge-high"><i class="bi bi-clock"></i> High</span>
+              {% else %}
+                <span class="badge badge-normal">Normal</span>
+              {% endif %}
+            </div>
+            <div class="food-card-body">
+              <h5 class="fw-bold text-dark mb-2 text-truncate" title="{{ item.food_type }}">{{ item.food_type }}</h5>
+              <div class="d-flex align-items-center text-muted small mb-2">
+                <i class="bi bi-shop me-2 text-success"></i>
+                <span class="text-truncate">{{ item.donor.name }}</span>
+              </div>
+              <div class="d-flex align-items-center text-muted small mb-2">
+                <i class="bi bi-geo-alt me-2 text-danger"></i>
+                <span class="text-truncate">{{ item.pickup_address }}</span>
+              </div>
+              <div class="p-2 bg-light rounded mt-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-success fs-6">{{ item.quantity }} {{ item.quantity_unit }}</span>
+                <span class="badge bg-dark bg-opacity-75"><i class="bi bi-stopwatch me-1"></i> {{ item.remaining_time_display }}</span>
+              </div>
+            </div>
+            <div class="food-card-footer text-center">
+              <a href="{% url 'listings:listing_detail' item.listing_id %}" class="btn btn-outline-success btn-sm w-100 fw-semibold">
+                View & Claim &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card p-5 text-center text-muted bg-white border-0 shadow-sm rounded-4">
+          <i class="bi bi-check2-circle text-success fa-3x mb-3"></i>
+          <h4>All food has been rescued!</h4>
+          <p class="mb-3">There are no unclaimed food listings right now. Check back soon or donate new surplus food.</p>
+          {% if user.is_donor %}
+            <div>
+              <a href="{% url 'listings:create_listing' %}" class="btn btn-success fw-bold">Donate Food</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Simple 4-Step Process -->
+<div class="container py-4 mb-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">How It Works</h2>
+    <p class="text-muted">A simple way to get food to people who need it</p>
+  </div>
+
+  <div class="row g-4 text-center">
+    <div class="col-md-3">
+      <div class="p-4 bg-white rounded-4 border h-100 shadow-sm">
+        <div class="metric-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <h5 class="fw-bold">1. Post Food</h5>
+        <p class="small text-muted mb-0">Donors list surplus meals with quantity, safe consumption time, and pickup address.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="p-4 bg-white rounded-4 border h-100 shadow-sm">
+        <div class="metric-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+          <i class="fa-solid fa-stopwatch"></i>
+        </div>
+        <h5 class="fw-bold">2. Quick Priority</h5>
+        <p class="small text-muted mb-0">Items with short expiry times get highlighted so nearby volunteers can pick them up quickly.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="p-4 bg-white rounded-4 border h-100 shadow-sm">
+        <div class="metric-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+          <i class="fa-solid fa-handshake"></i>
+        </div>
+        <h5 class="fw-bold">3. Volunteer Claims</h5>
+        <p class="small text-muted mb-0">Verified volunteers claim the food on the map and coordinate pickup immediately.</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="p-4 bg-white rounded-4 border h-100 shadow-sm">
+        <div class="metric-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
+          <i class="fa-solid fa-truck-ramp-box"></i>
+        </div>
+        <h5 class="fw-bold">4. Safe Delivery</h5>
+        <p class="small text-muted mb-0">Food is delivered to shelters, orphanages, or distributed directly to people in need.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Community Roles -->
+<div class="bg-light py-5 mb-5 rounded-4 mx-2 mx-md-4">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h3 class="fw-bold">Get Involved</h3>
+      <p class="text-muted">Choose your role and make an immediate impact</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+          <div class="metric-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+            <i class="fa-solid fa-utensils fs-3"></i>
+          </div>
+          <h5 class="fw-bold">Food Donors</h5>
+          <p class="small text-muted mb-3">Hotels, restaurants, bakeries, hostels, and households with extra fresh food.</p>
+          <a href="{% url 'accounts:register_donor' %}" class="btn btn-outline-success btn-sm mt-auto">Register as Donor</a>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+          <div class="metric-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
+            <i class="fa-solid fa-truck-moving fs-3"></i>
+          </div>
+          <h5 class="fw-bold">NGOs & Volunteers</h5>
+          <p class="small text-muted mb-3">Local charity teams and volunteers who pick up food and deliver it to recipients.</p>
+          <a href="{% url 'accounts:register_ngo' %}" class="btn btn-outline-info btn-sm mt-auto text-dark">Join as Volunteer</a>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100 border-0 shadow-sm p-4 text-center">
+          <div class="metric-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+            <i class="fa-solid fa-house-chimney-window fs-3"></i>
+          </div>
+          <h5 class="fw-bold">Shelters & Orphanages</h5>
+          <p class="small text-muted mb-3">Care homes, orphanages, and shelters that need regular food support for residents.</p>
+          <a href="{% url 'accounts:register_institution' %}" class="btn btn-outline-primary btn-sm mt-auto">Register Facility</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
